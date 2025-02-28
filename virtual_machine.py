@@ -1,4 +1,5 @@
 # virtual_machine.py
+
 import random
 import time
 import socket
@@ -33,8 +34,9 @@ class Logger:
             f.write(log_entry)
 
 class VirtualMachine:
-    def __init__(self, machine_id, port, clock_rate):
+    def __init__(self, machine_id, address, port, clock_rate):
         self.machine_id = machine_id
+        self.address = address  # IP address or hostname of the machine
         self.clock_rate = clock_rate
         self.port = port
         self.peers = []  # List of (address, port) tuples
@@ -42,7 +44,7 @@ class VirtualMachine:
         self.message_queue = []
         self.logger = Logger(machine_id, clock_rate)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.socket.bind(('localhost', self.port))
+        self.socket.bind((self.address, self.port))  # Bind to the provided address
 
     def add_peer(self, address, port):
         self.peers.append((address, port))
@@ -99,17 +101,23 @@ class VirtualMachine:
                     self.logger.log_record("internal", len(self.message_queue), self.logical_clock)
 
 if __name__ == "__main__":
-    vm1 = VirtualMachine(1, 5001, 5)
-    vm2 = VirtualMachine(2, 5002, 5)
-    vm3 = VirtualMachine(3, 5003, 5)
+    # Use localhost for testing on a single machine
+    address1 = "127.0.0.1"  # localhost
+    address2 = "127.0.0.1"  # localhost
+    address3 = "127.0.0.1"  # localhost
+
+    # Initialize machines with their respective addresses
+    vm1 = VirtualMachine(1, address1, 5001, 5)
+    vm2 = VirtualMachine(2, address2, 5002, 5)
+    vm3 = VirtualMachine(3, address3, 5003, 5)
 
     # Add peers
-    vm1.add_peer('localhost', 5002)
-    vm1.add_peer('localhost', 5003)
-    vm2.add_peer('localhost', 5001)
-    vm2.add_peer('localhost', 5003)
-    vm3.add_peer('localhost', 5001)
-    vm3.add_peer('localhost', 5002)
+    vm1.add_peer(address2, 5002)
+    vm1.add_peer(address3, 5003)
+    vm2.add_peer(address1, 5001)
+    vm2.add_peer(address3, 5003)
+    vm3.add_peer(address1, 5001)
+    vm3.add_peer(address2, 5002)
 
     # Start machines
     threading.Thread(target=vm1.run).start()
