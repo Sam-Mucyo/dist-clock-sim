@@ -1,0 +1,15 @@
+Machine 3 initialized with clock rate 5
+
+Time,Event,Queue Length,Logical Clock
+2025-02-28 16:29:59.753,internal,0,1
+2025-02-28 16:29:59.956,send,0,2
+2025-02-28 16:29:59.957,connection,localhost:5002,success
+2025-02-28 16:30:00.162,internal,0,3
+2025-02-28 16:30:00.163,receive,1,4
+2025-02-28 16:30:00.367,process,0,5
+2025-02-28 16:30:00.368,receive,1,6
+2025-02-28 16:30:00.573,process,0,7
+2025-02-28 16:30:00.574,receive,1,8
+2025-02-28 16:30:00.778,process,0,9
+2025-02-28 16:30:00.780,receive,1,10
+2025-02-28 16:30:00.981,process,0,11
