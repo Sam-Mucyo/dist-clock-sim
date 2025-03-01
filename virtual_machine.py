@@ -1,5 +1,3 @@
-# virtual_machine.py
-
 import random
 import time
 import socket
@@ -36,21 +34,21 @@ class Logger:
             f.write(log_entry)
 
 class VirtualMachine:
-    def __init__(self, machine_id, address, port, clock_rate):
+    def __init__(self, machine_id, address, port, clock_rate, peer_addresses):
         self.machine_id = machine_id
         self.address = address  # IP address or hostname of the machine
         self.clock_rate = clock_rate
         self.port = port
-        self.peers = []  # List of (address, port) tuples
+        self.peers = peer_addresses  # List of (address, port) tuples
         self.logical_clock = 0
         self.message_queue = queue.Queue()  # Thread-safe queue
         self.logger = Logger(machine_id, clock_rate)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # TCP socket
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # Allow reuse of address
         self.socket.bind((self.address, self.port))  # Bind to the provided address
-        self.running = False
-
-    def add_peer(self, address, port):
-        self.peers.append((address, port))
+        self.running = threading.Event()
+        self.receive_thread = None
+        self.run_thread = None
 
     def send(self, message, dest_address, dest_port):
         try:
@@ -66,7 +64,7 @@ class VirtualMachine:
 
     def receive(self):
         self.socket.listen(5)
-        while self.running:
+        while self.running.is_set():
             try:
                 client_socket, addr = self.socket.accept()
                 data = client_socket.recv(1024).decode()
@@ -78,22 +76,28 @@ class VirtualMachine:
                     self.logger.log_record("receive", self.message_queue.qsize(), self.logical_clock)
                 client_socket.close()
             except Exception as e:
-                self.logger.log_info(f"Error receiving message: {e}")
+                if self.running.is_set():
+                    self.logger.log_info(f"Error receiving message: {e}")
 
     def start(self):
-        self.running = True
-        receive_thread = threading.Thread(target=self.receive)
-        receive_thread.start()
+        self.running.set()
+        self.receive_thread = threading.Thread(target=self.receive)
+        self.run_thread = threading.Thread(target=self.run)
+        self.receive_thread.start()
+        self.run_thread.start()
         self.logger.log_info("Machine started")
 
     def stop(self):
-        self.running = False
+        self.running.clear()
         self.socket.close()
+        if self.receive_thread:
+            self.receive_thread.join()
+        if self.run_thread:
+            self.run_thread.join()
         self.logger.log_info("Machine stopped")
 
     def run(self):
-        self.start()
-        while self.running:
+        while self.running.is_set():
             time.sleep(1 / self.clock_rate)
             
             if not self.message_queue.empty():
@@ -118,36 +122,3 @@ class VirtualMachine:
                     # Internal event
                     self.logical_clock += 1
                     self.logger.log_record("internal", self.message_queue.qsize(), self.logical_clock)
-
-if __name__ == "__main__":
-    # Use localhost for testing on a single machine
-    address1 = "127.0.0.1"  # localhost
-    address2 = "127.0.0.1"  # localhost
-    address3 = "127.0.0.1"  # localhost
-
-    # Initialize machines with their respective addresses
-    vm1 = VirtualMachine(1, address1, 5001, 5)
-    vm2 = VirtualMachine(2, address2, 5002, 5)
-    vm3 = VirtualMachine(3, address3, 5003, 5)
-
-    # Add peers
-    vm1.add_peer(address2, 5002)
-    vm1.add_peer(address3, 5003)
-    vm2.add_peer(address1, 5001)
-    vm2.add_peer(address3, 5003)
-    vm3.add_peer(address1, 5001)
-    vm3.add_peer(address2, 5002)
-
-    # Start machines
-    vm1.start()
-    vm2.start()
-    vm3.start()
-
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        # Gracefully stop machines on keyboard interrupt
-        vm1.stop()
-        vm2.stop()
-        vm3.stop()
