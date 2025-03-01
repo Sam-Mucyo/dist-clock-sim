@@ -5,6 +5,8 @@ import time
 import socket
 import threading
 import os
+import queue
+import json
 from datetime import datetime
 
 class Logger:
@@ -24,12 +26,12 @@ class Logger:
             f.write(log_entry)
 
     def log_info(self, message):
-        print(f"Machine {self.machine_id}: {message}")
-
-    def log_connection(self, peer_address, peer_port, success):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-        status = "success" if success else "failed"
-        log_entry = f"{timestamp},connection,{peer_address}:{peer_port},{status}\n"
+        print(f"{timestamp}: Machine {self.machine_id}: {message}")
+
+    def log_connection(self, message):
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+        log_entry = f"{timestamp}: CONN_LOG: {message}\n"
         with open(self.log_file, "a") as f:
             f.write(log_entry)
 
@@ -41,64 +43,81 @@ class VirtualMachine:
         self.port = port
         self.peers = []  # List of (address, port) tuples
         self.logical_clock = 0
-        self.message_queue = []
+        self.message_queue = queue.Queue()  # Thread-safe queue
         self.logger = Logger(machine_id, clock_rate)
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # TCP socket
         self.socket.bind((self.address, self.port))  # Bind to the provided address
+        self.running = False
 
     def add_peer(self, address, port):
         self.peers.append((address, port))
 
     def send(self, message, dest_address, dest_port):
         try:
-            self.socket.sendto(str(message).encode(), (dest_address, dest_port))
-            self.logical_clock += 1
-            self.logger.log_record("send", len(self.message_queue), self.logical_clock)
-            self.logger.log_connection(dest_address, dest_port, True)  # Log successful connection
+            # Create a new socket for each send operation
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect((dest_address, dest_port))
+                s.sendall(json.dumps(message).encode())
+                self.logical_clock += 1
+                self.logger.log_record("send", self.message_queue.qsize(), self.logical_clock)
+                self.logger.log_connection(f"Sent message to {dest_address}:{dest_port}: {message}")
         except Exception as e:
-            self.logger.log_connection(dest_address, dest_port, False)  # Log failed connection
-            self.logger.log_info(f"Failed to send message to {dest_address}:{dest_port}: {e}")
+            self.logger.log_connection(f"Failed to send message to {dest_address}:{dest_port}: {e}")
 
     def receive(self):
-        while True:
+        self.socket.listen(5)
+        while self.running:
             try:
-                data, addr = self.socket.recvfrom(1024)
-                received_time = int(data.decode())
-                self.logical_clock = max(self.logical_clock, received_time) + 1
-                self.message_queue.append(received_time)
-                self.logger.log_record("receive", len(self.message_queue), self.logical_clock)
+                client_socket, addr = self.socket.accept()
+                data = client_socket.recv(1024).decode()
+                if data:
+                    message = json.loads(data)
+                    received_time = message["logical_clock"]
+                    self.logical_clock = max(self.logical_clock, received_time) + 1
+                    self.message_queue.put(received_time)
+                    self.logger.log_record("receive", self.message_queue.qsize(), self.logical_clock)
+                client_socket.close()
             except Exception as e:
                 self.logger.log_info(f"Error receiving message: {e}")
 
-    def run(self):
+    def start(self):
+        self.running = True
         receive_thread = threading.Thread(target=self.receive)
         receive_thread.start()
+        self.logger.log_info("Machine started")
 
-        while True:
+    def stop(self):
+        self.running = False
+        self.socket.close()
+        self.logger.log_info("Machine stopped")
+
+    def run(self):
+        self.start()
+        while self.running:
             time.sleep(1 / self.clock_rate)
             
-            if self.message_queue:
-                received_time = self.message_queue.pop(0)
+            if not self.message_queue.empty():
+                received_time = self.message_queue.get()
                 self.logical_clock = max(self.logical_clock, received_time) + 1
-                self.logger.log_record("process", len(self.message_queue), self.logical_clock)
+                self.logger.log_record("process", self.message_queue.qsize(), self.logical_clock)
             else:
                 action = random.randint(1, 10)
                 if action == 1:
                     # Send to the first peer
                     peer = self.peers[0]
-                    self.send(self.logical_clock, peer[0], peer[1])
+                    self.send({"logical_clock": self.logical_clock}, peer[0], peer[1])
                 elif action == 2:
                     # Send to the second peer
                     peer = self.peers[1]
-                    self.send(self.logical_clock, peer[0], peer[1])
+                    self.send({"logical_clock": self.logical_clock}, peer[0], peer[1])
                 elif action == 3:
                     # Send to both peers
                     for peer in self.peers:
-                        self.send(self.logical_clock, peer[0], peer[1])
+                        self.send({"logical_clock": self.logical_clock}, peer[0], peer[1])
                 else:
                     # Internal event
                     self.logical_clock += 1
-                    self.logger.log_record("internal", len(self.message_queue), self.logical_clock)
+                    self.logger.log_record("internal", self.message_queue.qsize(), self.logical_clock)
 
 if __name__ == "__main__":
     # Use localhost for testing on a single machine
@@ -120,6 +139,15 @@ if __name__ == "__main__":
     vm3.add_peer(address2, 5002)
 
     # Start machines
-    threading.Thread(target=vm1.run).start()
-    threading.Thread(target=vm2.run).start()
-    threading.Thread(target=vm3.run).start()
+    vm1.start()
+    vm2.start()
+    vm3.start()
+
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        # Gracefully stop machines on keyboard interrupt
+        vm1.stop()
+        vm2.stop()
+        vm3.stop()
