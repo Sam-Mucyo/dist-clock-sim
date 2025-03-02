@@ -23,6 +23,8 @@ The simulation creates multiple virtual machines that:
 1. Start the simulation:
    ```
    python simulation_controller.py
+
+   # TODO: fill in with chmod and ./ executable stuff
    ```
    This will create 3 virtual machines and run the simulation for 60 seconds.
 
