@@ -48,6 +48,7 @@ class SimulationController:
             # Create and store the machine
             machine = VirtualMachine(
                 machine_id=machine_id,
+                address = self.model_addr,
                 clock_rate=clock_rate,
                 port=port,
                 peer_addresses=peer_addresses
