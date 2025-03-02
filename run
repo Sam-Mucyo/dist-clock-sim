@@ -1,0 +1,83 @@
+#!/bin/bash
+
+# Distributed System Simulation Run Script
+echo "=== Distributed System Simulation Runner ==="
+
+# Check if virtual environment exists
+if [ ! -d "venv" ]; then
+  echo "Virtual environment not found."
+  echo "Please run the setup script first: ./setup.sh"
+  exit 1
+fi
+
+# Activate the virtual environment
+source venv/bin/activate
+
+# Parse command line arguments
+DURATION=60
+NUM_MACHINES=3
+ANALYZE=true
+
+while [[ $# -gt 0 ]]; do
+  key="$1"
+  case $key in
+  -d | --duration)
+    DURATION="$2"
+    shift 2
+    ;;
+  -m | --machines)
+    NUM_MACHINES="$2"
+    shift 2
+    ;;
+  --no-analysis)
+    ANALYZE=false
+    shift
+    ;;
+  -h | --help)
+    echo "Usage: ./run.sh [options]"
+    echo "Options:"
+    echo "  -d, --duration NUMBER    Set simulation duration in seconds (default: 60)"
+    echo "  -m, --machines NUMBER    Set number of virtual machines (default: 3)"
+    echo "  --no-analysis            Skip analysis after simulation"
+    echo "  -h, --help               Show this help message"
+    exit 0
+    ;;
+  *)
+    echo "Unknown option: $1"
+    echo "Use --help to see available options."
+    exit 1
+    ;;
+  esac
+done
+
+# Update the simulation controller with command line parameters
+echo "Configuring simulation with $NUM_MACHINES machines for $DURATION seconds..."
+sed -i "s/num_machines=3/num_machines=$NUM_MACHINES/g" simulation_controller.py
+sed -i "s/simulation_duration=60/simulation_duration=$DURATION/g" simulation_controller.py
+
+echo "Cleaning up previous logs..."
+rm -rf logs/*.log
+rm -rf logs/*.png
+rm -rf logs/*.txt
+
+echo "Starting simulation..."
+python simulation_controller.py
+
+# Run the analysis if requested
+if [ "$ANALYZE" = true ]; then
+  echo "Running analysis..."
+  python log_analyzer.py
+
+  # Display available analysis files
+  echo "Analysis completed. Results available in logs directory:"
+  ls -la logs/
+
+  # Try to open the directory with logs and result plots if a graphical environment is available
+  if command -v xdg-open >/dev/null 2>&1; then
+    xdg-open logs/ &>/dev/null || true
+  elif command -v open >/dev/null 2>&1; then
+    open logs/ &>/dev/null || true
+  fi
+fi
+
+echo "Simulation completed."
