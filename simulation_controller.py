@@ -5,7 +5,7 @@ import sys
 from virtual_machine import VirtualMachine
 
 class SimulationController:
-    def __init__(self, num_machines=3, base_port=5000, simulation_duration=60):
+    def __init__(self, num_machines=3, base_port=5000, simulation_duration=300):
         """
         Initialize the simulation controller.
         
