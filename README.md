@@ -4,9 +4,9 @@ This project simulates a small asynchronous distributed system with multiple vir
 
 ## Engineering Notebook & Results
 
-Design notebook:
+Design notebook: [`notebook.md`](https://github.com/Sam-Mucyo/dist-clock-sim/blob/main/notebook.md)
 
-Results:
+Results: [`analysis.ipynb`](https://github.com/Sam-Mucyo/dist-clock-sim/blob/main/analysis.ipynb)
 
 ## Overview
 
@@ -23,31 +23,16 @@ The simulation creates multiple virtual machines that:
 - `controller.py` - Controls the initialization and execution of the simulation
 - `log_analyzer.py` - Analyzes and visualizes the results of the simulation
 - `logs/` - Directory where machine logs are stored
+- `test_simulation_controller.py` - unit tests
+- `test_virtual_machine.py` - unit tests
 
 ## How to Run
 
+After cloning the repo, you may need to use the `setup` script to setup the environment with required dependencies by running: 
 
-
-## Customization
-
-You can modify the simulation parameters in `simulation_controller.py`:
-- `num_machines` - Number of virtual machines to simulate
-- `base_port` - Starting port number for machine communication
-- `simulation_duration` - Duration of the simulation in seconds
-
-## the Logs
-
-Each machine creates a log file with the following columns:
-- `Time` - System timestamp when the event occurred
-- `Event` - Type of event (internal, send, receive)
-- `Queue Length` - Current length of the message queue
-- `Logical Clock` - Value of the logical clock after the event
-
-## Visualization
-
-#TODO
-
-
-## Implementation Details
-
-#TODO 
+```bash
+chmod +x setup
+./setup
+```
+Rest (running the model and generating results plot), following:
+[`analysis.ipynb`](https://github.com/Sam-Mucyo/dist-clock-sim/blob/main/analysis.ipynb)
