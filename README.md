@@ -4,7 +4,8 @@ This project simulates a small asynchronous distributed system with multiple vir
 
 ## Engineering Notebook & Results
 
-Design notebook: 
+Design notebook:
+
 Results:
 
 ## Overview
