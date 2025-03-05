@@ -29,16 +29,11 @@ while [[ $# -gt 0 ]]; do
     NUM_MACHINES="$2"
     shift 2
     ;;
-  --no-analysis)
-    ANALYZE=false
-    shift
-    ;;
   -h | --help)
     echo "Usage: ./run.sh [options]"
     echo "Options:"
     echo "  -d, --duration NUMBER    Set simulation duration in seconds (default: 60)"
     echo "  -m, --machines NUMBER    Set number of virtual machines (default: 3)"
-    echo "  --no-analysis            Skip analysis after simulation"
     echo "  -h, --help               Show this help message"
     exit 0
     ;;
@@ -63,21 +58,4 @@ rm -rf logs/*.txt
 echo "Starting simulation..."
 python simulation_controller.py
 
-# Run the analysis if requested
-if [ "$ANALYZE" = true ]; then
-  echo "Running analysis..."
-  python log_analyzer.py
-
-  # Display available analysis files
-  echo "Analysis completed. Results available in logs directory:"
-  ls -la logs/
-
-  # Try to open the directory with logs and result plots if a graphical environment is available
-  if command -v xdg-open >/dev/null 2>&1; then
-    xdg-open logs/ &>/dev/null || true
-  elif command -v open >/dev/null 2>&1; then
-    open logs/ &>/dev/null || true
-  fi
-fi
-
-echo "Simulation completed."
+echo "Simulation completed. Use the analysis.ipynb to generate result plots!"
