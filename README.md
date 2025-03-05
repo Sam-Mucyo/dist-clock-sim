@@ -2,6 +2,11 @@
 
 This project simulates a small asynchronous distributed system with multiple virtual machines running at different speeds, each maintaining their own logical clock according to Lamport's logical clock rules.
 
+## Engineering Notebook & Results
+
+Design notebook: 
+Results:
+
 ## Overview
 
 The simulation creates multiple virtual machines that:
@@ -20,17 +25,7 @@ The simulation creates multiple virtual machines that:
 
 ## How to Run
 
-1. Start the simulation:
-   ```
-   python simulation_controller.py
-   ```
-   This will create 3 virtual machines and run the simulation for 60 seconds.
 
-2. After the simulation completes, analyze the results:
-   ```
-   python log_analyzer.py
-   ```
-   This will generate visualization plots and a text report in the `logs/` directory.
 
 ## Customization
 
