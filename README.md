@@ -26,7 +26,7 @@ The simulation creates multiple virtual machines that:
 ## Project Structure
 
 - `virtual_machine.py` - Implements the VirtualMachine class that models a single machine
-- `controller.py` - Controls the initialization and execution of the simulation
+- `simulation_controller.py` - Controls the initialization and execution of the simulation
 - `log_analyzer.py` - Analyzes and visualizes the results of the simulation
 - `logs/` - Directory where machine logs are stored
 - `test_simulation_controller.py` - unit tests
