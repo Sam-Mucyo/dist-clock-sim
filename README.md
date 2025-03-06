@@ -1,4 +1,4 @@
-## Distributed System Simulation with Logical Clocks
+## Overview
 
 This project simulates a small asynchronous distributed system with multiple virtual machines running at different speeds, each maintaining their own logical clock according to Lamport's logical clock rules.
 
@@ -15,8 +15,7 @@ Results: [`analysis.ipynb`](https://github.com/Sam-Mucyo/dist-clock-sim/blob/mai
 - [x] Tried the described variations? `analysis.ipynb`
 - [x] Bonus? `analysis.ipynb`
 
-## Overview
-
+## Functionalities
 The simulation creates multiple virtual machines that:
 - Run at different clock rates (1-6 ticks per second)
 - Communicate with each other via sockets
