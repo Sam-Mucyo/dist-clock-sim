@@ -2,16 +2,20 @@
 
 This project simulates a small asynchronous distributed system with multiple virtual machines running at different speeds, each maintaining their own logical clock according to Lamport's logical clock rules.
 
-## Engineering Notebook & Results
+## Engineering Notebooks & Results
 
 Design notebook: [`notebook.md`](https://github.com/Sam-Mucyo/dist-clock-sim/blob/main/notebook.md)
+
+Other entries: 
+- [Issues](https://github.com/Sam-Mucyo/dist-clock-sim/issues?q=is%3Aissue%20state%3Aclosed%20milestone%3A%22Functional%20v1%22)
+- [Merged PRs](https://github.com/Sam-Mucyo/dist-clock-sim/pulls?q=is%3Apr+is%3Aclosed)
 
 Results: [`analysis.ipynb`](https://github.com/Sam-Mucyo/dist-clock-sim/blob/main/analysis.ipynb)
 
 ## Rubric Breakdown
 - [x] Multiple processes? `virtual_machine.py`, `simulation_controller.py`
 - [x] Follow the specifications? `virtual_machine.py`, `simulation_controller.py`
-- [x] Observations leading to conclusions? `notebook.md`
+- [x] Observations leading to conclusions? `analysis.ipynb`
 - [x] Tried the described variations? `analysis.ipynb`
 - [x] Bonus? `analysis.ipynb`
 
@@ -26,7 +30,7 @@ The simulation creates multiple virtual machines that:
 ## Project Structure
 
 - `virtual_machine.py` - Implements the VirtualMachine class that models a single machine
-- `simulation_controller.py` - Controls the initialization and execution of the simulation
+- `simulation_controller.py` - Controls the initialization and execution of the model by running VMs
 - `log_analyzer.py` - Analyzes and visualizes the results of the simulation
 - `logs/` - Directory where machine logs are stored
 - `test_simulation_controller.py` - unit tests
