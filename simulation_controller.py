@@ -7,7 +7,8 @@ from virtual_machine import VirtualMachine
 
 
 class SimulationController:
-    def __init__(self, num_machines=3, base_port=5000, simulation_duration=300):
+    def __init__(self, num_machines=3, base_port=5000, simulation_duration=60, 
+                 clock_rate_min=1, clock_rate_max=6, internal_event_prob=0.7):
         """
         Initialize the simulation controller.
 
@@ -15,10 +16,16 @@ class SimulationController:
             num_machines (int): Number of virtual machines to simulate
             base_port (int): Starting port number for the machines
             simulation_duration (int): Duration of simulation in seconds
+            clock_rate_min (int): Minimum clock rate (ticks/second)
+            clock_rate_max (int): Maximum clock rate (ticks/second)
+            internal_event_prob (float): Probability of an event being internal (0.0-1.0)
         """
         self.num_machines = num_machines
         self.base_port = base_port
         self.simulation_duration = simulation_duration
+        self.clock_rate_min = clock_rate_min
+        self.clock_rate_max = clock_rate_max
+        self.internal_event_prob = internal_event_prob
         self.machines = []
 
         # NOTE: for v1, we will treat all virtual machines as running from same address
@@ -38,8 +45,8 @@ class SimulationController:
             machine_id = i + 1
             port = self.base_port + i
             clock_rate = random.randint(
-                1, 6
-            )  # Random clock rate between 1-6 ticks/second
+                self.clock_rate_min, self.clock_rate_max
+            )  # Random clock rate between min-max ticks/second
             machine_configs.append((machine_id, port, clock_rate))
 
         # Create peer address lists for each machine
@@ -56,6 +63,7 @@ class SimulationController:
                 clock_rate=clock_rate,
                 port=port,
                 peer_addresses=peer_addresses,
+                internal_event_prob=self.internal_event_prob,
             )
             self.machines.append(machine)
 
@@ -116,15 +124,43 @@ if __name__ == "__main__":
         default=3,
         help="Set number of virtual machines (default: 3)",
     )
+    parser.add_argument(
+        "--min-clock",
+        type=int,
+        default=1,
+        help="Minimum clock rate in ticks/second (default: 1)",
+    )
+    parser.add_argument(
+        "--max-clock",
+        type=int,
+        default=6,
+        help="Maximum clock rate in ticks/second (default: 6)",
+    )
+    parser.add_argument(
+        "-p",
+        "--internal-prob",
+        type=float,
+        default=0.7,
+        help="Probability of an event being internal (0.0-1.0) (default: 0.7)",
+    )
 
     args = parser.parse_args()
 
     DURATION = args.duration
     NUM_MACHINES = args.machines
+    MIN_CLOCK = args.min_clock
+    MAX_CLOCK = args.max_clock
+    INTERNAL_PROB = args.internal_prob
 
     # Create and run the simulation
     print("=== Distributed System Simulation with Logical Clocks ===")
 
-    sim = SimulationController(num_machines=NUM_MACHINES, simulation_duration=DURATION)
+    sim = SimulationController(
+        num_machines=NUM_MACHINES, 
+        simulation_duration=DURATION,
+        clock_rate_min=MIN_CLOCK,
+        clock_rate_max=MAX_CLOCK,
+        internal_event_prob=INTERNAL_PROB
+    )
     sim.initialize()
     sim.start()

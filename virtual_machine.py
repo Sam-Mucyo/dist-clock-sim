@@ -34,12 +34,24 @@ class Logger:
             f.write(log_entry)
 
 class VirtualMachine:
-    def __init__(self, machine_id, address, port, clock_rate, peer_addresses):
+    def __init__(self, machine_id, address, port, clock_rate, peer_addresses, internal_event_prob=0.7):
+        """
+        Initialize a virtual machine.
+        
+        Args:
+            machine_id (int): Unique identifier for this machine
+            address (str): IP address or hostname of the machine
+            port (int): Port number for this machine
+            clock_rate (int): Clock rate in ticks per second
+            peer_addresses (list): List of (address, port) tuples for peer machines
+            internal_event_prob (float): Probability of an event being internal (0.0-1.0)
+        """
         self.machine_id = machine_id
         self.address = address  # IP address or hostname of the machine
         self.clock_rate = clock_rate
         self.port = port
         self.peers = peer_addresses  # List of (address, port) tuples
+        self.internal_event_prob = internal_event_prob
         self.logical_clock = 0
         self.message_queue = queue.Queue()  # Thread-safe queue
         self.logger = Logger(machine_id, clock_rate)
@@ -105,16 +117,23 @@ class VirtualMachine:
                 self.logical_clock = max(self.logical_clock, received_time) + 1
                 self.logger.log_record("process", self.message_queue.qsize(), self.logical_clock)
             else:
-                action = random.randint(1, 10)
-                if action == 1:
+                # Calculate thresholds based on internal_event_prob
+                # For example, if internal_event_prob is 0.7, then 70% of events should be internal
+                # and 30% should be message sends (10% to peer1, 10% to peer2, 10% to both)
+                send_threshold = int((1 - self.internal_event_prob) * 100)
+                send_to_first_threshold = int(send_threshold / 3)
+                send_to_second_threshold = int(send_threshold / 3) * 2
+                
+                action = random.randint(1, 100)
+                if action <= send_to_first_threshold:
                     # Send to the first peer
                     peer = self.peers[0]
                     self.send({"logical_clock": self.logical_clock}, peer[0], peer[1])
-                elif action == 2:
+                elif action <= send_to_second_threshold:
                     # Send to the second peer
                     peer = self.peers[1]
                     self.send({"logical_clock": self.logical_clock}, peer[0], peer[1])
-                elif action == 3:
+                elif action <= send_threshold:
                     # Send to both peers
                     for peer in self.peers:
                         self.send({"logical_clock": self.logical_clock}, peer[0], peer[1])
