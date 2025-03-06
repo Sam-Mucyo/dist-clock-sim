@@ -8,6 +8,13 @@ Design notebook: [`notebook.md`](https://github.com/Sam-Mucyo/dist-clock-sim/blo
 
 Results: [`analysis.ipynb`](https://github.com/Sam-Mucyo/dist-clock-sim/blob/main/analysis.ipynb)
 
+## Rubric Breakdown
+- [x] Multiple processes? `virtual_machine.py`, `simulation_controller.py`
+- [x] Follow the specifications? `virtual_machine.py`, `simulation_controller.py`
+- [x] Observations leading to conclusions? `notebook.md`
+- [x] Tried the described variations? `analysis.ipynb`
+- [x] Bonus? `analysis.ipynb`
+
 ## Overview
 
 The simulation creates multiple virtual machines that:
