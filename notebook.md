@@ -13,11 +13,14 @@ Specifically, each machine needs to
 
 ## Thought Process  
 
+### Design Diagram
+![dist-clock-diagram](images/dist-clock-diagram.png)
+
 ### **Initial Design**  
-We started by breaking down the problem into smaller components:  
-1. **Virtual Machines**: Each machine needed to operate independently, with its own clock rate and logical clock.  
+While we were building our initial design diagram, we broke down the problem into smaller components:  
+1. **VMs**: Each machine needed to operate independently, with its own clock rate and logical clock.  
 2. **Communication**: Machines needed to send and receive messages asynchronously.  
-3. **Logical Clocks**: We needed to implement rules for updating logical clocks during internal events and message passing.  
+3. **Logical clocks**: We needed to implement rules for updating logical clocks during internal events and message passing.  
 4. **Logging**: To analyze the system's behavior, we decided to log all events (internal, send, receive) with timestamps and logical clock values.  
 
 We chose TCP sockets for communication because they provide reliable, ordered message delivery, which is important for maintaining causality in the system.  We also considered using IPC or threads, but ultimately decided to use TCP.
@@ -25,6 +28,13 @@ We chose TCP sockets for communication because they provide reliable, ordered me
 We also decided to scope the project into 2 milestones:
 For v1, we'd get something running in Python.
 For v2, we thought of a potential extension, building a separate simulation in C++
+
+### **Design Choices**
+**Data structures:** We switched from using arrays to thread-safe queues for message handling to avoid race conditions in asynchronous operations.
+
+**Decoupling:** we plan to decouple the VM component to facilitate future implementation in C++.
+
+**Parameterization:** We added command line arguments to control clock rate variations and internal event probabilities, so we could experiment more flexibly.
 
 ### **Challenges**  
 
@@ -48,6 +58,9 @@ We implemented detailed logging for every event, including timestamps, event typ
 
    - Scaling to a larger system would require optimizations like non-blocking I/O and more efficient message handling
 
+   - Our current implementation of peer selection (self.peers and self.peers) would need adjusting to scale up to more machines (>3)
+
 ## Future Work  
-   - Add support for more complex communication patterns, such as multicast or broadcast messages
+   - Add support for more complex communication patterns, like multicast or broadcast messages
    - build out v2 in C++  
+   - optimize  probability distribution system for better performance with many machines
