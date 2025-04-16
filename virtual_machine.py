@@ -5,6 +5,9 @@ import threading
 import os
 import queue
 import json
+import sys
+import signal
+import argparse
 from datetime import datetime
 
 class Logger:
@@ -141,3 +144,66 @@ class VirtualMachine:
                     # Internal event
                     self.logical_clock += 1
                     self.logger.log_record("internal", self.message_queue.qsize(), self.logical_clock)
+
+
+def parse_peer_list(peer_list_str):
+    """Parse the comma-separated peer list into a list of (address, port) tuples."""
+    peers = []
+    if peer_list_str:
+        for peer in peer_list_str.split(','):
+            addr, port = peer.split(':')
+            peers.append((addr, int(port)))
+    return peers
+
+
+def run_standalone_vm():
+    """Run a virtual machine as a standalone process.
+    This function is used when launching VMs in separate processes.
+    """
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Launch a single virtual machine instance')
+    parser.add_argument('--machine-id', type=int, required=True, help='Machine ID')
+    parser.add_argument('--port', type=int, required=True, help='Port number')
+    parser.add_argument('--clock-rate', type=int, required=True, help='Clock rate (ticks/second)')
+    parser.add_argument('--peer-list', type=str, required=True, help='Comma-separated list of peers (addr:port)')
+    parser.add_argument('--internal-prob', type=float, default=0.7, help='Probability of internal events')
+    parser.add_argument('--duration', type=int, default=60, help='Duration to run (seconds)')
+    
+    args = parser.parse_args()
+    
+    # Parse peer list
+    peer_addresses = parse_peer_list(args.peer_list)
+    
+    # Create and start the virtual machine
+    vm = VirtualMachine(
+        machine_id=args.machine_id,
+        address="127.0.0.1",
+        port=args.port,
+        clock_rate=args.clock_rate,
+        peer_addresses=peer_addresses,
+        internal_event_prob=args.internal_prob
+    )
+    
+    # Set up signal handler for graceful shutdown
+    def handle_signal(sig, frame):
+        print(f"VM {args.machine_id} received signal, shutting down...")
+        vm.stop()
+        sys.exit(0)
+    
+    signal.signal(signal.SIGINT, handle_signal)
+    signal.signal(signal.SIGTERM, handle_signal)
+    
+    # Start the VM
+    print(f"Starting VM {args.machine_id} (PID: {os.getpid()}) on port {args.port} with clock rate {args.clock_rate}")
+    vm.start()
+    
+    try:
+        # Keep the process running until duration is reached or signal is received
+        time.sleep(args.duration)
+        vm.stop()
+    except KeyboardInterrupt:
+        vm.stop()
+
+
+if __name__ == "__main__":
+    run_standalone_vm()
